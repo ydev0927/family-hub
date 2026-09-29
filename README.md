@@ -5,6 +5,7 @@ even when nobody is looking at it: whatever the family is watching, important ho
 interrupt the programme as an over-the-top **breaking-news ticker**.
 
 Built for the *Build, Ship, Shape: Amazon Developer Hackathon 2026* (Fire TV track).
+**Demo video (2:22, filmed on a real Fire TV Stick 4K Max): https://youtu.be/PiM6YO0QFBA**
 AI: Amazon Nova on Amazon Bedrock. Backend: AWS Lambda + DynamoDB. App: React Native (Expo) + a small Kotlin module.
 
 ![Dashboard](docs/dashboard.png)
