@@ -23,9 +23,14 @@ side is live (the project was developed against canned model answers while waiti
 
 ## Fire OS / Fire TV platform
 
-- `SYSTEM_ALERT_WINDOW` overlays work on Fire OS (Android 7.1–11), but there is no settings screen to
-  grant the permission; it must be granted with `adb shell appops set ... SYSTEM_ALERT_WINDOW allow`.
-  A developer-options toggle would make overlay apps demoable without a computer.
+- `SYSTEM_ALERT_WINDOW` overlays work on a Fire TV Stick 4K Max (Fire OS 8.1, Android 11), including
+  a focusable overlay that receives the remote's OK press. A forum answer from Amazon says overlays
+  are unsupported on Fire TV, which nearly made us drop the feature; an official statement would help.
+  There is no settings screen to grant the permission; it must be granted with
+  `adb shell appops set ... SYSTEM_ALERT_WINDOW allow`. A developer-options toggle would make overlay
+  apps demoable without a computer.
+- Wireless ADB (`adb connect <ip>:5555`) supports `adb reverse`, so a debug build can reach Metro on
+  the development machine without USB. This is not mentioned in the Fire TV ADB guide.
 - The Fire TV documentation no longer has a page about emulators (the Fire App Builder page that
   recommended the Android TV emulator returns 404). The hackathon rules mention a "Fire TV/Vega
   simulator", but the only Amazon simulator is the Vega Virtual Device, which does not run Fire OS
