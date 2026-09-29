@@ -363,7 +363,7 @@ export function createApp({ store, model, config }) {
       );
     }
 
-    return { epoch: state.epoch, alerts: out };
+    return { epoch: state.epoch, now: { date: now.date, time: now.time }, alerts: out };
   }
 
   async function qr() {

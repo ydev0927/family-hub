@@ -116,6 +116,7 @@ The sample household has Ken's soccer practice at 15:30; with rain in the foreca
    | `TEXT_MODEL_ID` | e.g. `us.amazon.nova-pro-v1:0` |
    | `VISION_MODEL_ID` | e.g. `us.amazon.nova-2-lite-v1:0` |
    | `TIMEZONE`, `LOCATION_NAME`, `LATITUDE`, `LONGITUDE`, `FAMILY` | see `backend/.env.example` |
+   | `TIME_SHIFT_MINUTES` | optional, demos only: run the household on a shifted clock (the TV clocks follow it) |
 
    Execution role: `bedrock:InvokeModel` on the two models (inference profiles and foundation models) and `dynamodb:GetItem` / `PutItem` on the table.
    Deploy the contents of `backend/` (with `node_modules`) as the function code.

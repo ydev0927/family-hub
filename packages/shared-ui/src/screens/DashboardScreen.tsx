@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, StyleSheet, View, Text } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,12 +24,23 @@ const SHORT_MONTHS = MONTHS.map((m) => m.slice(0, 3));
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-function useNow() {
-  const [now, setNow] = useState(new Date());
+// The household runs on the server's clock (the dev server can shift it for demos), so the TV clock
+// follows it: offset = server time - device time, rounded to whole minutes.
+function serverClockOffset(server: { date: string; time: string } | undefined): number {
+  if (!server) return 0;
+  const serverMs = new Date(`${server.date}T${server.time}:00`).getTime();
+  if (!Number.isFinite(serverMs)) return 0;
+  const deviceMinute = Math.floor(Date.now() / 60000) * 60000;
+  return Math.round((serverMs - deviceMinute) / 60000) * 60000;
+}
+
+function useNow(offsetMs: number) {
+  const [now, setNow] = useState(new Date(Date.now() + offsetMs));
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
+    setNow(new Date(Date.now() + offsetMs));
+    const id = setInterval(() => setNow(new Date(Date.now() + offsetMs)), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [offsetMs]);
   return now;
 }
 
@@ -332,8 +343,10 @@ function useWeather(location: { latitude: number; longitude: number; timezone?: 
 export default function DashboardScreen() {
   const isFocused = useIsFocused();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const now = useNow();
   const hub = usePolling(api.state, 30 * 1000);
+  // Computed once per response (not per render), so a minute boundary cannot skew it.
+  const clockOffset = useMemo(() => serverClockOffset(hub.data?.now), [hub.data]);
+  const now = useNow(clockOffset);
   const location = hub.data?.location ?? dashboardConfig.location;
   const { weather, error: weatherError } = useWeather(location);
   // The server asks Amazon Nova again only when the day's situation changed.

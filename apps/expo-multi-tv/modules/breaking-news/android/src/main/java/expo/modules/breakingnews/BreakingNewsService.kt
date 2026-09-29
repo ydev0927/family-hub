@@ -112,6 +112,8 @@ class BreakingNewsService : Service() {
   // Group of an interrupt that timed out with playback still paused. The person leaving usually taps
   // "I've left" on the phone minutes later; when the server reports that departure, playback resumes.
   private var awaitingDeparture: String? = null
+  // Server time minus device time, in whole minutes: the ticker's clock follows the household clock.
+  @Volatile private var clockOffsetMs = 0L
   private lateinit var windowManager: WindowManager
 
   override fun onBind(intent: Intent?): IBinder? = null
@@ -246,6 +248,7 @@ class BreakingNewsService : Service() {
     try {
       val body = JSONObject(request("GET", "/alerts", null))
       val reset = checkEpoch(body.optString("epoch", "legacy"))
+      body.optJSONObject("now")?.let { updateClockOffset(it.optString("date"), it.optString("time")) }
       val alerts = body.getJSONArray("alerts")
       val all = (0 until alerts.length()).map { parseAlert(alerts.getJSONObject(it)) }
       val seen = seenIds().toSet()
@@ -273,6 +276,12 @@ class BreakingNewsService : Service() {
       lastError = e.message ?: e.toString()
       Log.e(TAG, "poll failed", e)
     }
+  }
+
+  private fun updateClockOffset(date: String, time: String) {
+    val server = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).parse("$date $time")?.time }.getOrNull() ?: return
+    val deviceMinute = System.currentTimeMillis() / 60_000 * 60_000
+    clockOffsetMs = Math.round((server - deviceMinute) / 60_000.0) * 60_000
   }
 
   private fun ackDeparture(eventId: String) {
@@ -553,9 +562,10 @@ class BreakingNewsService : Service() {
     val root = FrameLayout(this)
 
     // Right side of the L: channel name, LIVE mark, and either the clock, a countdown, or a photo.
-    val big = text(SimpleDateFormat("HH:mm", Locale.US).format(Date()), 40f, Color.WHITE, bold = true)
+    val clock = Date(System.currentTimeMillis() + clockOffsetMs)
+    val big = text(SimpleDateFormat("HH:mm", Locale.US).format(clock), 40f, Color.WHITE, bold = true)
       .apply { setPadding(0, px(12f).toInt(), 0, 0) }
-    val small = text(SimpleDateFormat("EEE, MMM d", Locale.US).format(Date()), 14f, white70)
+    val small = text(SimpleDateFormat("EEE, MMM d", Locale.US).format(clock), 14f, white70)
     val side = LinearLayout(this).apply {
       orientation = LinearLayout.VERTICAL
       setBackgroundColor(bandColor)
