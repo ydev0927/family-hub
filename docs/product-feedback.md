@@ -76,6 +76,12 @@ overlay service and the phone page. The whole household is one DynamoDB item wit
   about 20 KB each) and keep only the latest four.
 - On-demand tables accept a maximum throughput (`--on-demand-throughput`), which doubles as a cost cap.
 
+## Amazon Polly (demo video narration)
+
+- The demo video's narration is Amazon Polly's generative engine (voice "Matthew"), synthesized one
+  sentence at a time so each caption could be timed exactly to its audio clip. About 1,300 characters
+  for the whole video; the voice sounded natural enough for a news-anchor style without any SSML.
+
 ## Getting started on AWS as a first-time user
 
 - `aws login` (console credentials in the CLI) removed the scariest step for a first-time AWS user:

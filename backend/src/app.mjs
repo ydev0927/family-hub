@@ -321,12 +321,12 @@ export function createApp({ store, model, config }) {
         }
       } else if (diff > URGENT_MINUTES && diff <= DEVELOPING_MINUTES) {
         await push(
-          { id: `${group}-developing`, group, level: 'developing', sticky: true, secondsLeft: diff * 60, eventId: e.id },
+          { id: `${group}-developing`, group, level: 'developing', sticky: true, secondsLeft: leaveAt * 60 - now.seconds, eventId: e.id },
           `${e.who} needs to leave for "${e.title}" (${e.time} start) at ${leaveText}, in ${diff} minutes. ${weatherLine}`,
         );
       } else if (diff > 0 && diff <= URGENT_MINUTES) {
         await push(
-          { id: `${group}-urgent`, group, level: 'urgent', sticky: true, secondsLeft: diff * 60, eventId: e.id },
+          { id: `${group}-urgent`, group, level: 'urgent', sticky: true, secondsLeft: leaveAt * 60 - now.seconds, eventId: e.id },
           `URGENT: ${e.who} must leave for "${e.title}" at ${leaveText}, only ${diff} minutes left. ${weatherLine}`,
         );
       } else if (diff <= 0 && diff > -INTERRUPT_GRACE_MINUTES) {
