@@ -76,6 +76,13 @@ targets of the sample are not part of Family Hub.
    adb reverse tcp:8081 tcp:8081 && adb reverse tcp:8787 tcp:8787
    ```
 
+   For a standalone build that does not need Metro (the API URL and token are baked in from `.env`):
+
+   ```bash
+   cd apps/expo-multi-tv/android && ./gradlew assembleRelease
+   adb install -r app/build/outputs/apk/release/app-release.apk
+   ```
+
 3. Allow the ticker to draw over other apps. Fire OS has no settings screen for this permission,
    so grant it once over ADB (the dashboard shows this command until it is done):
 

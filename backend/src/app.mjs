@@ -172,7 +172,7 @@ export function createApp({ store, model, config }) {
     const purchasedAt = result.purchaseDate ?? now.date;
     const groceries = (result.groceries ?? [])
       .filter((g) => g.name && Number.isFinite(g.shelfLifeDays) && g.shelfLifeDays > 0)
-      .map((g) => ({ id: newId('pt'), name: g.name, shelfLifeDays: g.shelfLifeDays, purchasedAt, used: false }));
+      .map((g) => ({ id: newId('pt'), name: capitalize(g.name), shelfLifeDays: g.shelfLifeDays, purchasedAt, used: false }));
     const record = {
       id: newId('scan'),
       at: new Date().toISOString(),
@@ -187,6 +187,10 @@ export function createApp({ store, model, config }) {
       s.scans.push(record);
     });
     return { kind: result.kind, summary: record.summary, added: { events, todos, groceries } };
+  }
+
+  function capitalize(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   // What the news desk may say about a photo: only what was actually added, so headlines stay true.
