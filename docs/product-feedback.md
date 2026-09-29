@@ -5,7 +5,7 @@ how getting started felt, and whether we would use it again. Details for each to
 
 | Tool | Used for | Worked well | Needs improvement | Onboarding | Use again? |
 |---|---|---|---|---|---|
-| react-native-multi-tv-app-sample | Starting point for the TV app | Fire OS build, remote keys and focus handling out of the box | Fire-OS-only quick start; `.gitignore` hides native modules | Fast: running on the emulator within an hour | Yes, as the base for any Fire OS app |
+| react-native-multi-tv-app-sample | Starting point for the TV app | Fire OS build, remote keys and focus handling out of the box | Fire-OS-only quick start; `.gitignore` hides native modules | Fast: running on the Android TV emulator on day one | Yes, as the base for any Fire OS app |
 | Expo modules on react-native-tvos | Kotlin overlay service and its bridge | `Module`/`Events` API; events worked first time | Warn on unknown keys in `expo-module.config.json` | One silent misconfiguration cost an hour | Yes |
 | Fire OS / Fire TV | Overlay ticker over any app, remote OK, ADB | Overlays and focus work on Fire OS 8.1; wireless ADB incl. `adb reverse` | Official word on overlays; a UI toggle for the overlay permission; docs on which simulator to use | ADB setup was quick; overlay support was unclear | Yes |
 | Amazon Bedrock / Amazon Nova | Reading photos, headlines, daily comment, dinner ideas | Converse API; Nova 2 Lite on busy notices; Nova Pro for exact headlines | JSON mode (answers came in code fences); note on new-account verification | Blocked for under an hour on a new account, then smooth | Yes, Nova 2 Lite and Nova Pro |
