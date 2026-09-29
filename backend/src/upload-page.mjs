@@ -98,7 +98,7 @@ function setStatus(el, text, kind) {
   el.textContent = text;
 }
 
-function resize(file, maxPx) {
+function resize(file, maxPx, quality = 0.85) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -107,7 +107,7 @@ function resize(file, maxPx) {
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', 0.85));
+      resolve(canvas.toDataURL('image/jpeg', quality));
     };
     img.onerror = () => reject(new Error('Could not read the photo'));
     img.src = URL.createObjectURL(file);
@@ -209,7 +209,8 @@ $('doneFile').addEventListener('change', async (ev) => {
   const file = ev.target.files[0];
   if (!file) return;
   try {
-    const dataUrl = await resize(file, 640);
+    // Kept in the household record (DynamoDB items max out at 400 KB), so keep it small.
+    const dataUrl = await resize(file, 400, 0.7);
     $('donePreview').src = dataUrl;
     $('donePreview').style.display = 'block';
     await finish(dataUrl.split(',')[1]);

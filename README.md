@@ -46,7 +46,7 @@ targets of the sample are not part of Family Hub.
 - A Fire TV running Fire OS 6 or later (Android 7.1+). Tested on a Fire TV Stick 4K Max
   (Fire OS 8.1) and on the Android TV emulator (API 31). Vega OS devices are **not** supported.
 - Node.js 18+, Yarn 4 (`corepack enable`), JDK 17, Android SDK platform 36 + build-tools 36.
-- For the AI: an AWS account with Amazon Bedrock access to Amazon Nova Micro and Nova Lite.
+- For the AI: an AWS account with Amazon Bedrock access to Amazon Nova Pro and Nova 2 Lite.
   Everything can also run **without AWS** using canned answers (`MODEL_PROVIDER=fixture`).
 
 ## Quick start (no AWS needed)
@@ -98,8 +98,12 @@ The sample household has Ken's soccer practice at 15:30; with rain in the foreca
 
 ## Running on AWS (Amazon Nova + DynamoDB)
 
-1. **Bedrock**: enable model access for Amazon Nova Micro and Nova Lite in your region
-   (cross-region inference profiles such as `us.amazon.nova-micro-v1:0` work too).
+1. **Bedrock**: Amazon Nova Pro for text (headlines, the daily comment, dinner ideas) and Nova 2 Lite
+   for photos, through the cross-region inference profiles `us.amazon.nova-pro-v1:0` and
+   `us.amazon.nova-2-lite-v1:0`. (In our tests Nova Micro and Nova 2 Lite added made-up details to
+   short headlines, and Nova Lite missed events on busy notices.) Amazon's own models need no
+   access request, but a brand-new AWS account is refused ("Your account is currently being verified")
+   until its verification finishes, which took under an hour for us.
 2. **DynamoDB**: create a table with partition key `pk` (string). The whole household is one item.
 3. **Lambda**: Node.js 22, handler `src/lambda.mjs`, timeout 60 s, memory 512 MB, with a
    **Function URL** (auth type NONE; the app's own token protects every route). Environment variables:
@@ -109,11 +113,11 @@ The sample household has Ken's soccer practice at 15:30; with rain in the foreca
    | `ACCESS_TOKEN` | a long random string |
    | `PUBLIC_URL` | the Function URL |
    | `TABLE_NAME` | the DynamoDB table |
-   | `TEXT_MODEL_ID` | e.g. `us.amazon.nova-micro-v1:0` |
-   | `VISION_MODEL_ID` | e.g. `us.amazon.nova-lite-v1:0` |
+   | `TEXT_MODEL_ID` | e.g. `us.amazon.nova-pro-v1:0` |
+   | `VISION_MODEL_ID` | e.g. `us.amazon.nova-2-lite-v1:0` |
    | `TIMEZONE`, `LOCATION_NAME`, `LATITUDE`, `LONGITUDE`, `FAMILY` | see `backend/.env.example` |
 
-   Execution role: `bedrock:InvokeModel` on the two models and `dynamodb:GetItem` / `PutItem` on the table.
+   Execution role: `bedrock:InvokeModel` on the two models (inference profiles and foundation models) and `dynamodb:GetItem` / `PutItem` on the table.
    Deploy the contents of `backend/` (with `node_modules`) as the function code.
 4. Point the TV app at it: `EXPO_PUBLIC_API_URL=https://<id>.lambda-url.<region>.on.aws` and the same token.
 

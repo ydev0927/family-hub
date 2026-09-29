@@ -173,7 +173,13 @@ export function createApp({ store, model, config }) {
     const groceries = (result.groceries ?? [])
       .filter((g) => g.name && Number.isFinite(g.shelfLifeDays) && g.shelfLifeDays > 0)
       .map((g) => ({ id: newId('pt'), name: g.name, shelfLifeDays: g.shelfLifeDays, purchasedAt, used: false }));
-    const record = { id: newId('scan'), at: new Date().toISOString(), kind: result.kind, summary: result.summary ?? 'Photo added' };
+    const record = {
+      id: newId('scan'),
+      at: new Date().toISOString(),
+      kind: result.kind,
+      summary: result.summary ?? 'Photo added',
+      fact: scanFact(result.kind, events, todos, groceries),
+    };
     await update(now, (s) => {
       s.schedule.push(...events);
       s.todos.push(...todos);
@@ -181,6 +187,19 @@ export function createApp({ store, model, config }) {
       s.scans.push(record);
     });
     return { kind: result.kind, summary: record.summary, added: { events, todos, groceries } };
+  }
+
+  // What the news desk may say about a photo: only what was actually added, so headlines stay true.
+  function scanFact(kind, events, todos, groceries) {
+    const day = (d) =>
+      new Date(`${d}T00:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const parts = [`A photo of a ${kind === 'receipt' ? 'shopping receipt' : kind === 'notice' ? 'notice' : 'note'} was added to the family board.`];
+    if (events.length) {
+      parts.push(`New on the schedule: ${events.map((e) => `${e.title} (${e.who}, ${day(e.date)}${e.time ? ` ${e.time}` : ''})`).join('; ')}.`);
+    }
+    if (todos.length) parts.push(`New to-dos: ${todos.map((t) => `${t.title} (${t.who})`).join('; ')}.`);
+    if (groceries.length) parts.push(`Now in the kitchen: ${groceries.map((g) => g.name).join(', ')}.`);
+    return parts.join(' ');
   }
 
   // --- chores ---
@@ -260,7 +279,7 @@ export function createApp({ store, model, config }) {
     const headline = async (id, fact) => {
       try {
         return await cached(state, now, `breaking|${id}`, () =>
-          model.text({ system: BREAKING_SYSTEM, input: breakingInput({ fact }), maxTokens: 60, temperature: 0.9 }),
+          model.text({ system: BREAKING_SYSTEM, input: breakingInput({ fact }), maxTokens: 60, temperature: 0.4 }),
         );
       } catch (e) {
         console.error(`headline for ${id} failed:`, e.message);
@@ -329,7 +348,7 @@ export function createApp({ store, model, config }) {
 
     for (const s of state.scans) {
       if (Date.now() - Date.parse(s.at) <= NEWS_MINUTES * 60 * 1000) {
-        await push({ id: `scan-${s.id}`, level: 'info' }, s.summary);
+        await push({ id: `scan-${s.id}`, level: 'info' }, s.fact ?? s.summary);
       }
     }
 

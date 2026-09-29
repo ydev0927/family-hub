@@ -40,17 +40,53 @@ side is live (the project was developed against canned model answers while waiti
 
 ## Amazon Bedrock / Amazon Nova
 
-- *pending*: prompt adherence for JSON answers (Nova Lite for vision, Nova Micro for text),
-  latency of the Converse API from Lambda, and behaviour of the image input limits.
-- Design-time note: the Converse API's uniform `system` + `messages` shape made it easy to keep one
-  thin client (`backend/src/model/bedrock.mjs`) and a canned stand-in for local development.
+How we use it: the Converse API from Lambda, through cross-region inference profiles. Nova 2 Lite
+reads photos (school notices, receipts, chore evidence) and answers in JSON. Nova Pro writes the
+news-style headlines, the daily comment and dinner ideas. Answers are cached per fact in DynamoDB.
+
+- **Photo reading.** On a test notice with a field trip at the top and a bake sale at the bottom,
+  Nova Lite (v1) returned only the field trip, even when its own `summary` mentioned the bake sale and
+  the prompt said to include every dated activity. Nova 2 Lite returned both, in 2 of 2 runs, with
+  the same prompt. A receipt came back as five food items with sensible shelf lives; the plastic bag
+  and the point discount were correctly skipped. A 1100×1400 JPEG took about 3–4 s end to end.
+- **Headlines.** Short facts invite invention. From "The Spinach in the kitchen should be used today"
+  Nova Micro and Nova 2 Lite added a "family meeting at noon"; from a receipt photo summary one model
+  added "$120 worth of groceries". What fixed it: passing concrete facts (the actual items added)
+  instead of a one-line summary, temperature 0.3–0.4, and a rule against new facts. At 0.4, Nova Pro
+  was the only model that kept every time and name right across our seven test facts (about 1.0–1.4 s
+  each), including the one that matters most, the time to leave.
+- **JSON.** Even with "JSON only" in the system prompt, answers usually came wrapped in a
+  ```` ```json ```` fence. A JSON mode (or a documented way to turn off the fence) would help.
+- **New accounts.** For the first hour after sign-up, every Converse call failed with
+  `AccessDeniedException: Your account is currently being verified`, while DynamoDB and Lambda
+  already worked. The message is clear; mentioning this in the Bedrock getting-started page would save
+  newcomers a debugging detour.
+- The Converse API's uniform `system` + `messages` shape made it easy to keep one thin client
+  (`backend/src/model/bedrock.mjs`) and a canned stand-in for local development.
 
 ## AWS Lambda Function URLs + DynamoDB
 
-- *pending*: cold-start latency with the AWS SDK v3 clients, and the Function URL payload format
-  (`requestContext.http.method`, base64 bodies) in practice.
-- Design-time note: DynamoDB conditional writes (`#v = :v`) gave a simple optimistic-concurrency
-  story for a single-item household state.
+How we use it: one Node.js 22 function (arm64, 512 MB) behind a Function URL serves the TV, the
+overlay service and the phone page. The whole household is one DynamoDB item with a version number.
+
+- Cold starts were 530–610 ms of init with the AWS SDK v3 Bedrock and DynamoDB clients bundled;
+  memory use stayed around 120–135 MB.
+- DynamoDB conditional writes (`#v = :v`) gave a simple optimistic-concurrency story for a
+  single-item household state. The 400 KB item limit made us shrink chore photos (400 px, JPEG 70%,
+  about 20 KB each) and keep only the latest four.
+- On-demand tables accept a maximum throughput (`--on-demand-throughput`), which doubles as a cost cap.
+
+## Getting started on AWS as a first-time user
+
+- `aws login` (console credentials in the CLI) removed the scariest step for a first-time AWS user:
+  no access keys to create or store. The JavaScript SDK v3 picked up the same credentials with no
+  extra setup.
+- Choosing the **Paid** plan at sign-up is required to redeem hackathon promotional credits (the Free
+  plan is "not eligible for other promotional credits"). That is easy to miss in the sign-up flow.
+- To make "no surprise bills" concrete we used AWS Budgets: e-mail alerts at $1, $5 and $10 of usage
+  (credits excluded), and a budget action that attaches a deny-all policy to the function's role at
+  $10. Budget actions are a good kill switch for hobby projects; a one-click "stop spending at $X"
+  preset in the console would make this much more approachable.
 
 ## Open-Meteo
 

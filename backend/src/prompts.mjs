@@ -42,7 +42,10 @@ Rules:
 - Write every title and name in English, even if the photo is in Japanese or another language.
 - Use today's date to fill in a missing year. Dates must be real calendar dates.
 - For receipts, list only food and drinks in "groceries". Estimate a typical home shelf life in days (for example milk 7, chicken 3, onions 21, rice 180). Skip non-food items, bags, and discounts.
-- For notices, put dated activities in "events" and things to prepare or bring in "todos".
+- For notices, put dated activities in "events" and things to prepare, bring or submit in "todos".
+- One event per real-world activity. Title it with the activity itself (for example "School trip to Ueno Zoo", not "Meet at school gate"), and use its start or meeting time. Do not add separate events for returning, pick-up details or reminders about the same activity.
+- Read the whole photo from top to bottom. Every activity that has a date gets its own event, even when it has nothing to do with the main topic of the notice (for example a bake sale or a parents' meeting mentioned at the bottom). If the summary mentions an activity, it must also be in "events".
+- When a todo has a deadline, put it in the title (for example "Return the signed consent form by Oct 2").
 - Pick "who" from the family members when the photo makes it clear, otherwise use "Everyone".
 - Leave arrays empty when nothing applies.`;
 
@@ -60,7 +63,13 @@ export function recipeInput(kitchen) {
     .join('\n');
 }
 
-export const BREAKING_SYSTEM = `You write breaking-news tickers for a family's TV, in the over-the-top style of a TV news channel, about everyday household events. Answer with one line, 14 words at most, in English, no emojis. Do not start with "Breaking". Keep every name, time and number from the facts exactly as given.`;
+export const BREAKING_SYSTEM = `You write breaking-news tickers for a family's TV, in the over-the-top style of a TV news channel, about everyday household events. Answer with one line, 14 words at most, in English, no emojis. Do not start with "Breaking".
+Lead with the most important fact: who, what, and when. For a departure, the time to leave is the most important fact.
+Keep every name, time and number from the facts exactly as given. Use only the facts given: never invent winners, results, prices, amounts or anything else that is not in them. The drama comes from the wording, not from new facts. When the facts are short, keep the headline short rather than adding details.
+Examples of the tone:
+- Ken must leave for soccer at 15:10, rain on the radar, twelve minutes on the clock
+- Fresh supplies land in the kitchen: salmon, tofu, carrots, milk and broccoli
+- Zoo day confirmed: field trip to Ueno Zoo Tuesday at 08:00, consent forms due`;
 
 export function breakingInput(alert) {
   return alert.fact;

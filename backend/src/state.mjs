@@ -8,7 +8,8 @@ export const newId = (prefix) => `${prefix}-${Date.now().toString(36)}-${(counte
 // Bounds that keep the single state item well under DynamoDB's 400 KB limit.
 export const MAX_CACHE_KEYS = 80;
 export const MAX_SCANS = 30;
-export const MAX_PHOTOS = 8;
+// Chore photos live in the one household item (DynamoDB limit: 400 KB); each is about 30-50 KB.
+export const MAX_PHOTOS = 4;
 export const MAX_DONE_TODOS = 60;
 
 // Sample household used on first start, so the dashboard has something to show.
