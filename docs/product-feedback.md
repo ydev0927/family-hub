@@ -1,7 +1,18 @@
 # Product feedback (tools, APIs and SDKs used)
 
-Feedback from building Family Hub, per tool. Items marked *pending* will be filled in once the AWS
-side is live (the project was developed against canned model answers while waiting for credits).
+Feedback from building Family Hub, per tool: what we used it for, what worked, what needs work,
+how getting started felt, and whether we would use it again. Details for each tool follow the table.
+
+| Tool | Used for | Worked well | Needs improvement | Onboarding | Use again? |
+|---|---|---|---|---|---|
+| react-native-multi-tv-app-sample | Starting point for the TV app | Fire OS build, remote keys and focus handling out of the box | Fire-OS-only quick start; `.gitignore` hides native modules | Fast: running on the emulator within an hour | Yes, as the base for any Fire OS app |
+| Expo modules on react-native-tvos | Kotlin overlay service and its bridge | `Module`/`Events` API; events worked first time | Warn on unknown keys in `expo-module.config.json` | One silent misconfiguration cost an hour | Yes |
+| Fire OS / Fire TV | Overlay ticker over any app, remote OK, ADB | Overlays and focus work on Fire OS 8.1; wireless ADB incl. `adb reverse` | Official word on overlays; a UI toggle for the overlay permission; docs on which simulator to use | ADB setup was quick; overlay support was unclear | Yes |
+| Amazon Bedrock / Amazon Nova | Reading photos, headlines, daily comment, dinner ideas | Converse API; Nova 2 Lite on busy notices; Nova Pro for exact headlines | JSON mode (answers came in code fences); note on new-account verification | Blocked for under an hour on a new account, then smooth | Yes, Nova 2 Lite and Nova Pro |
+| AWS Lambda + Function URLs + DynamoDB | The whole backend and household state | One function, no API Gateway; conditional writes; on-demand caps | Nothing blocking | Easy once `aws login` was set up | Yes |
+| Amazon Polly | Demo video narration | Natural generative voice without SSML | Nothing blocking | One CLI call | Yes, for future demo videos |
+| AWS account, `aws login`, Budgets | First-time AWS setup and cost guardrails | No access keys needed; budget actions as a kill switch | Paid plan needed for promo credits is easy to miss; a "stop at $X" preset | Sign-up to first deploy in one evening | Yes |
+| Open-Meteo | Weather and rain margin | No key, one request | Nothing | Minutes | Yes |
 
 ## react-native-multi-tv-app-sample (Amazon)
 
@@ -10,7 +21,8 @@ side is live (the project was developed against canned model answers while waiti
 - The README is 540 lines and covers five platforms. A "Fire OS only" quick start would help people
   who own a Fire OS stick and no Vega device.
 - `.gitignore` contains a bare `android/`, which also ignores hand-written native modules under
-  `modules/*/android/`. We lost our Kotlin module from the first commit attempt. Suggest `apps/*/android/`.
+  `modules/*/android/`, so our Kotlin module would have been left out of the repository; we caught it
+  before the first commit. Suggest `apps/*/android/`.
 - The 22 MB demo GIF in the repository root ends up in every fork.
 
 ## Expo modules (expo-modules-core 3.x) on react-native-tvos
