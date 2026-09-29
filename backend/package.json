@@ -1,0 +1,14 @@
+{
+  "name": "family-hub-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev-server.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1141.0",
+    "@aws-sdk/client-dynamodb": "^3.1141.0",
+    "@aws-sdk/lib-dynamodb": "^3.1141.0",
+    "qrcode": "^1.5.4"
+  }
+}
