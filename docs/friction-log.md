@@ -1,27 +1,112 @@
 # Friction log
 
-Chronological notes of where development slowed down, what caused it, and what fixed it.
+Where building Family Hub slowed down. Each entry: the task, the steps taken, what we expected versus
+what happened, severity (High / Medium / Low), the workaround, and a suggestion.
 
-| When | What happened | Cause | Fix / time lost |
-|---|---|---|---|
-| Day 1 | `brew install --cask zulu@17` failed: the installer needs `sudo` and an interactive password. | Cask uses a pkg installer. | Used the `openjdk@17` formula instead (no sudo). ~10 min. |
-| Day 1 | Android SDK licenses had to be accepted before `sdkmanager` would install packages. | Standard, but not mentioned in the sample README. | `yes \| sdkmanager --licenses`. ~5 min. |
-| Day 1 | `yarn` not found even though the sample pins `packageManager: yarn@4.5.0`. | Corepack is not enabled by default on Homebrew Node. | `npm i -g corepack && corepack enable`. ~5 min. |
-| Day 1 | `expo run:android --device emulator-5554` said "Could not find device with name". | The flag expects the AVD name, not the adb serial. | Ran without `--device`. ~5 min. |
-| Day 1 | New Kotlin module compiled but `requireNativeModule('BreakingNews')` failed at runtime. | `expo-module.config.json` used `modulesClassNames` (older docs); autolinking produced `modules: []` without a warning. | Renamed the key to `modules`. ~60 min. |
-| Day 1 | Overlay never appeared on the emulator. | No UI to grant `SYSTEM_ALERT_WINDOW` on TV builds. | `adb shell appops set com.familyhub.tv SYSTEM_ALERT_WINDOW allow`; the app now shows this command on screen. ~15 min. |
-| Day 1 | Metro started with `CI=1` served a stale bundle after edits. | CI mode disables file watching. | Restart Metro without `CI`. ~15 min. |
-| Day 1 | First OK press on the remote did nothing after dismissing the dev warning bar. | Unclear (possibly the emulator leaving touch mode). Not reproduced on the second press. | Noted; not fixed. |
-| Day 1 | The sample's `.gitignore` ignored the hand-written `modules/breaking-news/android/`. | Bare `android/` pattern. | Scoped to `apps/*/android/`. ~10 min. |
-| Day 1 | Hackathon rules require the demo video on "an actual Fire TV device or the Fire TV/Vega simulator", but Amazon ships no Fire OS simulator. | Documentation gap (see product feedback). | Demo will be recorded on a real Fire TV Stick. |
-| Day 1 | Demo footage over YouTube would show third-party trademarks, which the rules forbid. | Rules. | Added a Play/Pause shortcut that plays a CC-licensed film inside the app for filming. |
-| Day 2 | On the real Fire TV Stick 4K Max the debug app stayed on the splash screen. | The debug build loads JS from `localhost:8081` on the device and ignores the `expo-development-client` deep link. | `adb reverse tcp:8081 tcp:8081` works over wireless ADB too. ~10 min. |
-| Day 2 | Would the overlay work on a real Fire TV at all? A forum answer says `SYSTEM_ALERT_WINDOW` is unsupported. | Conflicting information. | It works on Fire OS 8.1 after the `appops` grant, including taking the remote's OK press. No time lost, but a day of uncertainty. |
-| Day 2 | After the interrupt was dismissed, the programme stayed paused. | Only a pause signal existed. | Added a resume signal (OK press, or the phone's "I've left", even after the 90-second timeout). ~40 min. |
-| Day 2 | Every Bedrock call failed with "Your account is currently being verified" on the new AWS account. | New-account verification (under an hour for us). DynamoDB and Lambda worked meanwhile. | Built the table and function first, then tested Nova. ~45 min of waiting, no work lost. |
-| Day 2 | Hackathon credits could only be redeemed on the Paid plan. | Free plan accounts are not eligible for promotional credits. | Chose Paid and added budget alerts plus an automatic stop at $10. ~20 min. |
-| Day 2 | Nova Lite skipped the second event on a notice; headlines invented details ("family meeting at noon"). | Model capability and too little context in the prompt. | Nova 2 Lite for photos, Nova Pro for headlines, concrete facts, temperature 0.4. ~60 min. |
-| Day 2 | Chore photos in the single household item could exceed DynamoDB's 400 KB limit. | 640 px photos, up to eight kept. | 400 px / JPEG 70% (~20 KB) and at most four photos. Caught before it failed. ~15 min. |
-| Day 2 | Recording the demo on the Fire TV with `adb shell screenrecord`: stopping it with a signal left an unplayable file, and a still screen produced a one-frame video. | screenrecord only writes frames when the screen changes and needs a clean stop to finalize the file. | Fixed-length recordings (`--time-limit`), screenshots for still moments, then converted to constant frame rate for editing. ~20 min. |
-| Day 2 | The departure countdown on the TV jumped back by up to a minute at each poll. | The server rounded the time left to whole minutes. | Seconds-precise `secondsLeft`. Spotted while filming. ~10 min. |
-| Day 2 | With the household clock shifted for the demo, the TV clock still showed the real time. | Clocks on the TV used the device time. | The server now returns its time; the dashboard and the ticker follow it. ~30 min. |
+## 1. Let the ticker draw over other apps on a Fire TV
+
+- **Steps:** installed the app on a Fire TV Stick 4K Max (Fire OS 8.1) and looked for "Display over other apps" in Settings.
+- **Expected:** a settings screen to grant the overlay permission, as on phones.
+- **Actual:** there is no such screen; the overlay fails until `adb shell appops set <package> SYSTEM_ALERT_WINDOW allow` is run from a computer.
+- **Severity:** High. A normal user cannot enable an overlay app without a computer.
+- **Workaround:** the app shows the exact ADB command on the dashboard until the permission is granted, then starts the ticker by itself.
+- **Suggestion:** add the toggle under Settings > Applications (or at least Developer options), and document it on the Fire TV developer site.
+
+## 2. Find out whether overlays are supported on Fire TV at all
+
+- **Steps:** searched the Fire TV docs and the developer forums before building the feature.
+- **Expected:** a clear statement of overlay support per Fire OS version.
+- **Actual:** no doc page; a forum answer from Amazon says overlays are unsupported. On a real Fire OS 8.1 device they work, including a focusable overlay that receives the remote's OK press.
+- **Severity:** Medium. We nearly dropped the core feature.
+- **Workaround:** built it and tested on the device.
+- **Suggestion:** an official page on `TYPE_APPLICATION_OVERLAY` support and focus behaviour on each Fire OS version.
+
+## 3. Find a Fire OS simulator for the demo video
+
+- **Steps:** read the hackathon rule ("actual Fire TV device or the Fire TV/Vega simulator") and looked for a Fire OS simulator.
+- **Expected:** an Amazon simulator that runs Fire OS apps.
+- **Actual:** the only Amazon simulator is the Vega Virtual Device, which does not run Fire OS apps; the Fire TV docs no longer describe an emulator (the Fire App Builder page that pointed to the Android TV emulator returns 404).
+- **Severity:** Medium.
+- **Workaround:** developed on the Android TV emulator (API 31) and filmed on a real Fire TV Stick.
+- **Suggestion:** state which emulator to use for Fire OS development and whether it counts for submissions.
+
+## 4. Run a debug build on a real Fire TV over Wi-Fi
+
+- **Steps:** `adb connect <ip>:5555`, installed the debug APK, launched it with the Expo dev-client deep link pointing at the Mac.
+- **Expected:** the app loads its JavaScript from Metro on the Mac.
+- **Actual:** the app stayed on the splash screen; the debug build looks for Metro at `localhost:8081` on the TV and ignored the deep link.
+- **Severity:** Medium.
+- **Workaround:** `adb reverse tcp:8081 tcp:8081` works over wireless ADB too. For the demo we built a standalone release APK.
+- **Suggestion:** mention in the Fire TV ADB guide that `adb reverse` works over a network connection.
+
+## 5. Keep a hand-written native module in git (react-native-multi-tv-app-sample)
+
+- **Steps:** added `apps/expo-multi-tv/modules/breaking-news/android/` (Kotlin) and checked `git status`.
+- **Expected:** the new files are tracked.
+- **Actual:** the sample's `.gitignore` has a bare `android/`, which ignores every `android/` folder, including native modules.
+- **Severity:** Low (caught before the first commit).
+- **Workaround:** scoped the pattern to `apps/*/android/`.
+- **Suggestion:** use `apps/*/android/` in the sample.
+
+## 6. Register a Kotlin Expo module
+
+- **Steps:** wrote `expo-module.config.json` with the key `modulesClassNames` (from older examples) and rebuilt.
+- **Expected:** the module is found at runtime.
+- **Actual:** autolinking silently produced `modules: []`; the app failed with `Cannot find native module 'BreakingNews'`.
+- **Severity:** Medium (about an hour).
+- **Workaround:** renamed the key to `modules`.
+- **Suggestion:** warn on unknown keys in `expo-module.config.json`.
+
+## 7. Redeem the hackathon's AWS credits on a new account
+
+- **Steps:** created an AWS account and tried to plan for the $150 promotional credit.
+- **Expected:** any new account can redeem it.
+- **Actual:** the Free plan offered at sign-up is "not eligible for other promotional credits"; only the Paid plan can redeem them.
+- **Severity:** Medium. Easy to miss, and a first-time user worries about bills on the Paid plan.
+- **Workaround:** chose the Paid plan and added AWS Budgets alerts at $1 / $5 / $10 plus a budget action that attaches a deny-all policy at $10.
+- **Suggestion:** say "choose the Paid plan" in the credit instructions, and offer a one-click "stop spending at $X" preset.
+
+## 8. Call Amazon Nova on a brand-new AWS account
+
+- **Steps:** `aws login`, then a Converse call to `us.amazon.nova-micro-v1:0`.
+- **Expected:** works (Amazon's own models need no access request).
+- **Actual:** `AccessDeniedException: Your account is currently being verified` for under an hour, while DynamoDB and Lambda already worked.
+- **Severity:** Medium.
+- **Workaround:** created the table and the function first, then tested Nova.
+- **Suggestion:** mention account verification in the Bedrock getting-started page and show its status in the console.
+
+## 9. Get reliable JSON and complete extraction from Nova
+
+- **Steps:** asked for "JSON only" and gave Nova Lite a school notice with a field trip at the top and a bake sale at the bottom.
+- **Expected:** plain JSON with both events.
+- **Actual:** answers came wrapped in a ```` ```json ```` fence, and Nova Lite returned only the field trip, even when its own summary mentioned the bake sale.
+- **Severity:** Medium.
+- **Workaround:** parse the text between the first `{` and the last `}`; switched to Nova 2 Lite, which returned both events in every run.
+- **Suggestion:** a JSON mode for Nova in the Converse API, and guidance on which Nova model to use for document extraction.
+
+## 10. Write short, truthful news headlines
+
+- **Steps:** asked Nova Micro and Nova 2 Lite (temperature 0.9) for a 14-word headline from a one-line fact.
+- **Expected:** a dramatic wording of the same facts.
+- **Actual:** invented details, e.g. "family meeting at noon" from "The Spinach in the kitchen should be used today", and "$120 worth of groceries" from a receipt summary.
+- **Severity:** Medium. A family news ticker that lies is worse than none.
+- **Workaround:** pass the concrete items added, forbid new facts in the prompt, temperature 0.4, and Nova Pro for headlines.
+- **Suggestion:** document grounding tips for very short generations.
+
+## 11. Record the demo on the Fire TV
+
+- **Steps:** `adb shell screenrecord`, stopped with a signal.
+- **Expected:** a playable video of the TV screen.
+- **Actual:** stopping it early left an unplayable file, and a still screen produced a one-frame video (frames are written only on change).
+- **Severity:** Low.
+- **Workaround:** fixed `--time-limit` recordings, screenshots for still moments, conversion to a constant frame rate.
+- **Suggestion:** a short "recording a demo on Fire TV" guide.
+
+## 12. Show the demo at a chosen time of day
+
+- **Steps:** shifted the server clock to film the 15:10 departure countdown in the evening.
+- **Expected:** a consistent picture.
+- **Actual:** the TV clocks showed the real time, and the countdown jumped back at each poll because the server rounded to minutes.
+- **Severity:** Low (our own bugs, found while filming).
+- **Workaround:** the server now returns its time, the TV clocks follow it, and the time left is exact to the second.
+- **Suggestion:** none for Amazon; noted for completeness.
